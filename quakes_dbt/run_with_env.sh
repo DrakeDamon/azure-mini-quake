@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ensure we run from the script directory so .env resolves
+cd "$(dirname "$0")"
+
 # Load .env (if present) into environment without printing values
 if [ -f .env ]; then
   set -a
@@ -26,5 +29,9 @@ fi
 if [ -z "${AZURE_CLIENT_SECRET:-}" ] && [ -n "${CLIENT_SECRET:-}" ]; then
   export AZURE_CLIENT_SECRET="${CLIENT_SECRET}"
 fi
+
+# Use certifi CA bundle for TLS verification to avoid macOS CA issues
+export REQUESTS_CA_BUNDLE="$(python -c 'import certifi,sys; print(certifi.where())' 2>/dev/null || echo "")"
+export SSL_CERT_FILE="${REQUESTS_CA_BUNDLE}"
 
 exec dbt "$@"
