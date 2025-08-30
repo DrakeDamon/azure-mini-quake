@@ -32,6 +32,7 @@ jobs:
       - name: dbt debug
         working-directory: quakes_dbt
         run: |
+          mkdir -p ~/.dbt
           cat > ~/.dbt/profiles.yml <<'YAML'
           quakes_dbt:
             target: dev
