@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: eq_daily_metrics
+    description: Daily quake counts and average magnitude by bucket
+    columns:
+      - name: event_date
+        tests: [not_null]
+      - name: mag_bucket
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["M<3.0","M3.0-3.9","M4.0-4.9","M5.0-5.9","M6.0-6.9","M>=7.0"]
+      - name: quakes
+        tests: [not_null]
+      - name: avg_mag
+        tests: [not_null]
+
+  - name: eq_top100
+    description: Top 100 strongest events from Silver
+    columns:
+      - name: event_time
+        tests: [not_null]
+      - name: mag
+        tests:
+          - not_null
+          - relationships:
+              to: ref('eq_top100')
+              field: mag
