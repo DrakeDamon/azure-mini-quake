@@ -1,0 +1,14 @@
+# Python venv
+.venv/
+
+# Local environment files (never commit secrets)
+.env
+quakes_dbt/.env
+
+# dbt build artifacts
+target/
+logs/
+dbt_packages/
+
+# macOS
+.DS_Store
