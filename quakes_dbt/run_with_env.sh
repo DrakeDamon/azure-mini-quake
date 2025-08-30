@@ -1,37 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-# Ensure we run from the script directory so .env resolves
 cd "$(dirname "$0")"
 
-# Load .env (if present) into environment without printing values
-if [ -f .env ]; then
-  set -a
-  # shellcheck disable=SC1091
-  . ./.env
-  set +a
-fi
+# activate virtual environment
+source ../.venv/bin/activate
 
-# Back-compat/env mapping for alternate variable names
-# Map DATABRICKS_URL -> DBX_HOST (strip scheme)
-if [ -z "${DBX_HOST:-}" ] && [ -n "${DATABRICKS_URL:-}" ]; then
-  _host="${DATABRICKS_URL#https://}"
-  _host="${_host#http://}"
-  export DBX_HOST="${_host%%/}"
-fi
-# Map Azure SP vars if alternative names are used
-if [ -z "${AZURE_TENANT_ID:-}" ] && [ -n "${TENANT_ID:-}" ]; then
-  export AZURE_TENANT_ID="${TENANT_ID}"
-fi
-if [ -z "${AZURE_CLIENT_ID:-}" ] && [ -n "${CLIENT_ID:-}" ]; then
-  export AZURE_CLIENT_ID="${CLIENT_ID}"
-fi
-if [ -z "${AZURE_CLIENT_SECRET:-}" ] && [ -n "${CLIENT_SECRET:-}" ]; then
-  export AZURE_CLIENT_SECRET="${CLIENT_SECRET}"
-fi
+# load .env
+set -a
+source .env
+set +a
 
-# Use certifi CA bundle for TLS verification to avoid macOS CA issues
-export REQUESTS_CA_BUNDLE="$(python -c 'import certifi,sys; print(certifi.where())' 2>/dev/null || echo "")"
-export SSL_CERT_FILE="${REQUESTS_CA_BUNDLE}"
+# hard-unset anything that could override SP auth
+unset DATABRICKS_TOKEN || true
+unset DATABRICKS_HOST || true
+unset DATABRICKS_HTTP_PATH || true
+unset DATABRICKS_CONFIG_FILE || true
+unset DATABRICKS_CFG_PATH || true
 
-exec dbt "$@"
+# explicitly set auth method for databricks-sql-connector
+export DATABRICKS_AUTH_TYPE=azure-service-principal
+export DATABRICKS_AZURE_TENANT_ID="${AZURE_TENANT_ID}"
+export DATABRICKS_AZURE_CLIENT_ID="${AZURE_CLIENT_ID}"
+export DATABRICKS_AZURE_CLIENT_SECRET="${AZURE_CLIENT_SECRET}"
+
+# use certifi CA bundle to avoid macOS SSL chain issues
+export REQUESTS_CA_BUNDLE="$(python -c 'import certifi; print(certifi.where())')"
+export SSL_CERT_FILE="$REQUESTS_CA_BUNDLE"
+
+# (optional) echo what dbt will see
+env | egrep 'DBX_|AZURE_|DATABRICKS' || true
+
+dbt "$@"
