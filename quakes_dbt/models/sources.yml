@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: quakes_src
+    database: hive_metastore
+    schema: quakes
+    tables:
+      - name: silver_earthquakes
+        description: Clean/typed earthquakes (Delta) from Silver layer
+        columns:
+          - name: event_time
+            tests: [not_null]
+          - name: event_date
+            tests: [not_null]
+          - name: mag
+            tests: [not_null]
