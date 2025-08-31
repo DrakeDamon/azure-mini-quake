@@ -27,3 +27,12 @@ models:
           - relationships:
               to: ref('eq_top100')
               field: mag
+
+  - name: eq_gold_dashboard
+    columns:
+      - name: event_date
+        tests: [not_null]
+      - name: total_quakes
+        tests: [not_null]
+      - name: avg_mag
+        tests: [not_null]
