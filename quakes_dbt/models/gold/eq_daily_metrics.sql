@@ -2,7 +2,7 @@
 
 with s as (
   select event_date, mag_bucket, mag
-  from {{ source('quakes_src','silver_earthquakes') }}
+  from {{ ref('stg_earthquakes') }}
 )
 select
   event_date,

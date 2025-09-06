@@ -7,7 +7,7 @@ select
   lat,
   lon,
   depth_km
-from {{ source('quakes_src','silver_earthquakes') }}
+from {{ ref('stg_earthquakes') }}
 order by mag desc
 limit 100
 
