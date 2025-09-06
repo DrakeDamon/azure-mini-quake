@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: stg_earthquakes
+    description: Staging layer for earthquake data with proper casting
+    columns:
+      - name: event_time
+        tests: 
+          - not_null
+          - unique
+      - name: event_date
+        tests: [not_null]
+      - name: mag
+        tests: [not_null]
+      - name: mag_bucket
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["M<3.0","M3.0-3.9","M4.0-4.9","M5.0-5.9","M6.0-6.9","M>=7.0"]
+      - name: place
+        tests: [not_null]
+      - name: lat
+        tests: [not_null]
+      - name: lon
+        tests: [not_null]
+      - name: depth_km
+        tests: [not_null]
