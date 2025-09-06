@@ -4,10 +4,12 @@ models:
   - name: stg_earthquakes
     description: Staging layer for earthquake data with proper casting
     columns:
-      - name: event_time
+      - name: usgs_id
         tests: 
           - not_null
           - unique
+      - name: event_time
+        tests: [not_null]
       - name: event_date
         tests: [not_null]
       - name: mag
