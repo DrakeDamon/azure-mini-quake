@@ -1,0 +1,89 @@
+version: 2
+
+models:
+  - name: earthquake_features
+    description: Daily feature mart for earthquake analytics with derived features for ML and advanced analytics
+    columns:
+      - name: event_date
+        description: Date of earthquake activity (partition key)
+        tests:
+          - not_null
+          - unique
+
+      - name: quakes_7d_rolling
+        description: Rolling count of earthquakes in the past 7 days
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 10000
+
+      - name: mag_avg_normalized
+        description: Z-score normalized daily average magnitude
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: -5.0
+              max_value: 5.0
+
+      - name: major_quake_indicator
+        description: Binary flag for earthquakes >= 6.0 magnitude that day
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: depth_category
+        description: Categorical encoding of average earthquake depth
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["shallow", "intermediate", "deep"]
+
+      - name: geographic_cluster
+        description: K-means cluster assignment based on daily earthquake centroid
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1, 2, 3, 4, 5, 6, 7]
+
+      - name: feature_generated_at
+        description: Timestamp when feature row was generated
+        tests:
+          - not_null
+
+      - name: data_source_version
+        description: Version identifier of source data used for feature generation
+        tests:
+          - not_null
+
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "quakes_7d_rolling >= 0"
+          config:
+            severity: error
+      
+      - dbt_utils.expression_is_true:
+          expression: "case when major_quake_indicator = 1 then mag_avg_normalized > -2.0 else true end"
+          config:
+            severity: warn
+            
+  # Relationships to source tables
+  - name: earthquake_features
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - event_date
+          config:
+            severity: error
+
+# Freshness test for the feature mart
+sources:
+  - name: feature_marts
+    tables:
+      - name: earthquake_features
+        description: Feature mart freshness monitoring
+        freshness:
+          warn_after: {count: 25, period: hour}
+          error_after: {count: 48, period: hour}
+        loaded_at_field: feature_generated_at
